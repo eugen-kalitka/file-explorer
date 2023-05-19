@@ -1,0 +1,42 @@
+{
+  "name": "file-explorer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@fastify/cors": "^8.2.1",
+    "@fastify/static": "^6.10.1",
+    "@fastify/websocket": "^7.2.0",
+    "@reduxjs/toolkit": "^1.9.4",
+    "chokidar": "^3.5.3",
+    "chonky": "^2.3.2",
+    "chonky-icon-fontawesome": "^2.3.2",
+    "fastify": "^4.15.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-redux": "^8.0.5",
+    "typescript": "^5.0.3",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "@types/react": "^18.0.35",
+    "@types/react-dom": "^18.0.11",
+    "@types/ws": "^8.5.4",
+    "html-webpack-plugin": "^5.5.1",
+    "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.1",
+    "webpack": "^5.79.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.13.3"
+  },
+  "scripts": {
+    "build": "webpack",
+    "start": "webpack-dev-server --open",
+    "start:server": "ts-node src/backend/server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
