@@ -24,14 +24,13 @@ fastify.register(directoriesApi);
  * */
 fastify.register(wsService);
 
-// Start server
-const start = async () => {
+const startServer = async () => {
   try {
-    await fastify.listen({port: 5000})
+    await fastify.listen({ port: 5000 })
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)
   }
 }
 
-start();
+startServer();

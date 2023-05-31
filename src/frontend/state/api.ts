@@ -1,4 +1,5 @@
-import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react'
+import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
+import type { FileArray } from 'chonky';
 import type {Node} from '../../common/types/Node';
 import {FolderEvent} from "../../common/types/FolderEvent";
 
@@ -15,7 +16,7 @@ const formatNode = (node) => ({
 
 export const api = createApi({
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://127.0.0.1:5000/api',
+    baseUrl: 'http://localhost:5000/api'
   }),
 
   endpoints: (build) => ({
@@ -48,8 +49,10 @@ export const api = createApi({
       }
     }),
 
-    streamFolders: build.query<Node[], string>({
+    streamFolders: build.query<FileArray, string>({
       query: (path) => ({url: `directories?path=${path}`}),
+
+      keepUnusedDataFor: 0,
 
       transformResponse: (response: Node[], meta) => {
         if (!response?.children) {
@@ -62,9 +65,11 @@ export const api = createApi({
 
       // queryFn: () => ({ data: [] }),
 
-      async onCacheEntryAdded(arg, {updateCachedData, cacheEntryRemoved}) {
+      async onCacheEntryAdded(arg, {updateCachedData, cacheDataLoaded, cacheEntryRemoved}) {
         console.log('........ON CACHE ENTRY ADDED');
-        const ws = new WebSocket('ws://127.0.0.1:5000/ws');
+        await cacheDataLoaded;
+
+        const ws = new WebSocket('ws://localhost:5000/ws');
 
         // populate the array with messages as they are received from the websocket
         ws.addEventListener('message', (event) => {
@@ -98,7 +103,7 @@ export const api = createApi({
           };
           ws.send(JSON.stringify(openFolderEvent));
         });
-        await cacheEntryRemoved
+        await cacheEntryRemoved;
         ws.close()
       },
 

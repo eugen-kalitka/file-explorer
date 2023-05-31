@@ -1,7 +1,7 @@
 import chokidar from 'chokidar';
 
 function fileWatcher(directoryName, callbacks) {
-  chokidar.watch(directoryName, {
+  return chokidar.watch(directoryName, {
     ignoreInitial: true,
     depth: 0
   })

@@ -10,16 +10,8 @@ async function get(fastify) {
       },
     },
     handler: function (request, reply) {
-      console.log(">>>> REQUEST <<< ");
-      const getDirectoryPath = () => {
-        if (request.query.path === '/') {
-          return '';
-        }
-        return request.query.path || '';
-      }
-      const path = getDirectoryPath();
-      const tree = directoryTreeBuilder(path);
-      reply.send(tree)
+      const tree = directoryTreeBuilder(request.query.path);
+      reply.send(tree);
     }
   });
 }

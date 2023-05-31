@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import type {Node} from '../../common/types/Node';
-import crypto from 'crypto';
 
 function directoryTreeBuilder(filename, isChild = false) {
   const targetFilePath = path.join(process.cwd(), 'directory', filename);
@@ -16,7 +15,6 @@ function directoryTreeBuilder(filename, isChild = false) {
     path: filename,
     name: path.basename(filename),
     type: null,
-    // id: crypto.createHash('md5').update(filename).digest("hex"),
     children: null,
     modifiedAt: stats.mtime.toISOString()
   };

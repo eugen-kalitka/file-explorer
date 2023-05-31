@@ -18,7 +18,7 @@ const listenDirectory = (directoryName, socket) => {
   };
 
   const onNodeAdded = (nodePath) => {
-    const targetNodePath = nodePath.replace(directoryName + path.sep, '');
+    const targetNodePath = nodePath.replace(path.join(process.cwd(), 'directory') + path.sep, '');
     socket.send(JSON.stringify({
       type: 'add',
       data: directoryTreeBuilder(targetNodePath)
@@ -33,7 +33,7 @@ const listenDirectory = (directoryName, socket) => {
     }));
   }
 
-  fileWatcher(directoryName, {
+  return fileWatcher(directoryName, {
     onNodeAdded,
     onNodeChanged,
     onNodeRemoved
@@ -41,15 +41,16 @@ const listenDirectory = (directoryName, socket) => {
 }
 
 async function service(fastify) {
-  const subscriptions = ''
+  const subscriptions = new WeakMap();
 
-  fastify.get('/ws', {websocket: true}, (connection) => {
+  fastify.get('/ws', {websocket: true}, async (connection, request) => {
     connection.socket.on('message', (data) => {
       const parsed = JSON.parse(data.toString());
       console.log(" >>>>>>> data", parsed);
       if (parsed.type === 'open') {
         const directoryToWatch = parsed.path === '/' ? '' : parsed.path;
-        listenDirectory(path.resolve(process.cwd(), 'directory', directoryToWatch), connection.socket);
+        const watcher = listenDirectory(path.resolve(process.cwd(), 'directory', directoryToWatch), connection.socket);
+        subscriptions.set(connection, watcher);
       }
       if (parsed.type === 'unlink') {
         parsed.files.forEach(node => {
@@ -68,6 +69,13 @@ async function service(fastify) {
             fs.renameSync(fullNodePath, nodeDestinationPath);
           }
         })
+      }
+    });
+
+    connection.socket.on('close', (e) => {
+      const subscription = subscriptions.get(connection);
+      if (subscription) {
+        subscription.close();
       }
     });
 

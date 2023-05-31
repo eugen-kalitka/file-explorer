@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   FileBrowser,
   FileNavbar,
@@ -8,12 +8,9 @@ import {
   FileHelper
 } from 'chonky';
 import {useStreamFoldersQuery, useRemoveNodesMutation, useMoveNodesMutation} from '../../state/api';
-import usePathQueryParam from '../../hooks/usePathQueryParam';
 import {getFolderChain} from './file-explorer.utils';
 
-const FileExplorer = () => {
-  const {path, updateUrl} = usePathQueryParam();
-
+const FileExplorer = ({ path, updateUrl }) => {
   const folderChain = getFolderChain(path);
 
   const {data, ...rest} = useStreamFoldersQuery(path);
