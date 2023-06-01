@@ -1,6 +1,14 @@
 export const getFolderChain = (path) => {
   let latestPath = [];
-  return path.split('/').reduce((folderChain, currentFolder) => {
+  const pathParts = path.split('/').filter(Boolean);
+  if (!pathParts.length) {
+    return [{
+      isDir: true,
+      id: '/',
+      name: 'root'
+    }];
+  }
+  return pathParts.reduce((folderChain, currentFolder) => {
     latestPath.push(currentFolder);
     folderChain.push({
       isDir: true,

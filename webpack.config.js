@@ -23,6 +23,13 @@ module.exports = [{
                     transpileOnly: true,
                     useCaseSensitiveFileNames: true,
                 },
+            },
+            {
+              test: /\.css$/,
+              use: [
+                'style-loader',
+                'css-loader'
+              ]
             }
         ],
     },

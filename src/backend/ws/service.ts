@@ -44,6 +44,8 @@ async function service(fastify) {
   const subscriptions = new WeakMap();
 
   fastify.get('/ws', {websocket: true}, async (connection, request) => {
+    console.log('......... ON CONNECT');
+
     connection.socket.on('message', (data) => {
       const parsed = JSON.parse(data.toString());
       console.log(" >>>>>>> data", parsed);
@@ -51,12 +53,22 @@ async function service(fastify) {
         const directoryToWatch = parsed.path === '/' ? '' : parsed.path;
         const watcher = listenDirectory(path.resolve(process.cwd(), 'directory', directoryToWatch), connection.socket);
         subscriptions.set(connection, watcher);
+
+        const tree = directoryTreeBuilder(directoryToWatch);
+        connection.socket.send(JSON.stringify({
+          type: 'open',
+          data: tree
+        }));
       }
       if (parsed.type === 'unlink') {
         parsed.files.forEach(node => {
-          const fullNodePath = path.join(process.cwd(), 'directory', node);
+          const fullNodePath = path.join(process.cwd(), 'directory', node.id);
           if (fs.existsSync(fullNodePath)) {
-            fs.unlinkSync(fullNodePath)
+            if (node.isDir) {
+              fs.rmSync(fullNodePath, { recursive: true, force: true });
+            } else {
+              fs.unlinkSync(fullNodePath)
+            }
           }
         })
       }
@@ -69,6 +81,14 @@ async function service(fastify) {
             fs.renameSync(fullNodePath, nodeDestinationPath);
           }
         })
+      }
+      if (parsed.type === 'createFolder') {
+        const newFolderPath = path.join(process.cwd(), 'directory', parsed.path, parsed.folderName);
+        if (fs.existsSync(newFolderPath)) {
+          // TODO send error package on FE
+          return 'error'
+        }
+        fs.mkdirSync(newFolderPath);
       }
     });
 

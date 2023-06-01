@@ -7,19 +7,18 @@ import {
   FileList,
   FileHelper
 } from 'chonky';
-import {useStreamFoldersQuery, useRemoveNodesMutation, useMoveNodesMutation} from '../../state/api';
-import {getFolderChain} from './file-explorer.utils';
+import { useStreamFoldersQuery, useRemoveNodesMutation, useMoveNodesMutation, useCreateFolderMutation } from '../../state/api';
+import { getFolderChain } from './file-explorer.utils';
+import prompt from '../prompt';
 
 const FileExplorer = ({ path, updateUrl }) => {
   const folderChain = getFolderChain(path);
 
-  const {data, ...rest} = useStreamFoldersQuery(path);
+  const {data = [], ...rest} = useStreamFoldersQuery(path);
 
   const [removeNodes] = useRemoveNodesMutation();
   const [moveNodes] = useMoveNodesMutation();
-
-  console.log(">>>>>>>>> data");
-  console.log(data);
+  const [createFolder] = useCreateFolderMutation();
 
   const handleFileAction = (data) => {
     if (data.id === ChonkyActions.OpenFiles.id) {
@@ -41,9 +40,19 @@ const FileExplorer = ({ path, updateUrl }) => {
       });
       return;
     }
+    if (data.id === ChonkyActions.CreateFolder.id) {
+      prompt().then((value) => {
+        createFolder({
+          folderName: value,
+          path
+        });
+      });
+      return;
+    }
   }
 
   const fileActions = [
+    ChonkyActions.CreateFolder,
     ChonkyActions.DeleteFiles,
   ];
 

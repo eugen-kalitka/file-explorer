@@ -12,11 +12,20 @@ const formatNode = (node) => ({
   size: node.size,
   modDate: node.modifiedAt,
   isHidden: node.name.startsWith('.')
-})
+});
+
+const transformResponse = (response: Node) => {
+  if (!response?.children) {
+    return {
+      data: []
+    };
+  }
+  return response.children.filter(Boolean).map(childItem => formatNode(childItem));
+}
 
 export const api = createApi({
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:5000/api'
+    baseUrl: 'http://localhost:4000/api'
   }),
 
   endpoints: (build) => ({
@@ -27,7 +36,7 @@ export const api = createApi({
         }
         const removeNodesEvent = {
           type: 'unlink',
-          files: nodes.map(node => node.id)
+          files: nodes.map(node => node)
         };
         socket.send(JSON.stringify(removeNodesEvent));
         return Promise.resolve([]);
@@ -49,21 +58,27 @@ export const api = createApi({
       }
     }),
 
-    streamFolders: build.query<FileArray, string>({
-      query: (path) => ({url: `directories?path=${path}`}),
-
-      keepUnusedDataFor: 0,
-
-      transformResponse: (response: Node[], meta) => {
-        if (!response?.children) {
-          return {
-            data: []
-          };
+    createFolder: build.mutation({
+      queryFn: ({ folderName, path }) => {
+        if (!socket) {
+          return;
         }
-        return response.children.filter(Boolean).map(childItem => formatNode(childItem));
+        const createFolderEvent = {
+          type: 'createFolder',
+          folderName,
+          path
+        };
+        socket.send(JSON.stringify(createFolderEvent));
+        return Promise.resolve([]);
+      }
+    }),
+
+    streamFolders: build.query<FileArray, string>({
+      queryFn() {
+        return { data: [] };
       },
 
-      // queryFn: () => ({ data: [] }),
+      keepUnusedDataFor: 0,
 
       async onCacheEntryAdded(arg, {updateCachedData, cacheDataLoaded, cacheEntryRemoved}) {
         console.log('........ON CACHE ENTRY ADDED');
@@ -76,6 +91,9 @@ export const api = createApi({
           console.log('......EVENT.....', event);
           updateCachedData((draft) => {
             const parsedData = JSON.parse(event.data);
+            if (parsedData.type === 'open') {
+              draft.push(...transformResponse(parsedData.data));
+            }
             if (parsedData.type === 'unlink') {
               const index = draft.findIndex(({name}) => name === parsedData.name);
               if (index !== -1) {
@@ -111,5 +129,5 @@ export const api = createApi({
   }),
 })
 
-export const { useStreamFoldersQuery, useRemoveNodesMutation, useMoveNodesMutation } = api;
+export const { useStreamFoldersQuery, useRemoveNodesMutation, useMoveNodesMutation, useCreateFolderMutation } = api;
 export default api;
