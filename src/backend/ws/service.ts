@@ -2,13 +2,14 @@ import type { SocketStream } from '@fastify/websocket';
 import FileWatcher from '../utils/file-watcher';
 import FileActions from '../utils/file-actions';
 import { fileActionTypes } from "../../common/constants/file-action-types";
+import {serializeMessage} from "../utils/helpers";
 
 async function service(fastify) {
   const fileWatcher = new FileWatcher();
 
   fastify.get('/ws', {websocket: true}, async (connection: SocketStream) => {
 
-    connection.socket.on('message', (data) => {
+    connection.socket.on('message', async (data) => {
       let message;
       try {
         message = JSON.parse(data.toString());
@@ -20,31 +21,44 @@ async function service(fastify) {
         const directoryToWatch = message.path === '/' ? '' : message.path;
         fileWatcher.start(directoryToWatch, connection)
       }
+
+      /**
+       * Remove files/folders handler
+       * */
       if (message.type === fileActionTypes.UNLINK) {
-        FileActions.unlink(message.files);
+        try {
+          await FileActions.unlink(message.files);
+        } catch (e) {
+          connection.socket.send(serializeMessage('error', null, e.message));
+        }
       }
+
+      /**
+       * Move files/folders handler
+       * */
       if (message.type === fileActionTypes.MOVE) {
-        FileActions.move(message.files, message.destination);
+        try {
+          await FileActions.move(message.files, message.destination);
+        } catch (e) {
+          connection.socket.send(serializeMessage('error', null, e.message));
+        }
       }
+
+      /**
+       * Create Folder handler
+       * */
       if (message.type === fileActionTypes.CREATE_FOLDER) {
-        FileActions.createFolder(message.path, message.folderName);
+        try {
+          await FileActions.createFolder(message.path, message.folderName);
+        } catch (e) {
+          connection.socket.send(serializeMessage('error', null, e.message));
+        }
       }
     });
 
     connection.socket.on('close', (e) => {
       fileWatcher.stop(connection);
     });
-
-    /**
-     * fs.watch API is missing next items
-     * 1. on Mac - file removal via finder triggers rename event
-     *
-     * TODO check more missing items in fs.watch API
-     * */
-    // fs.watch(directoryPath, { recursive: true }, (event, filename) => {
-    //     console.log('......EVENT', event);
-    //     console.log('......FILENAME', filename);
-    // });
   })
 }
 

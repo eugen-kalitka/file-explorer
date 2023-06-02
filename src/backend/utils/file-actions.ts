@@ -23,7 +23,7 @@ class FileActions {
     }
     if (errors.length) {
       console.log('Error(s) occurred on removing files', errors);
-      // TODO send error package to FE
+      throw new Error(errors.join(', '));
     }
   }
 
@@ -51,7 +51,7 @@ class FileActions {
     }
     if (errors.length) {
       console.log('Error(s) occurred on removing files', errors);
-      // TODO send error package to FE
+      throw new Error(errors.join(', '));
     }
   }
 
@@ -70,7 +70,7 @@ class FileActions {
         errorMessage = `The name "${folderName}" is already taken`;
       }
       console.log(errorMessage);
-      // TODO send error package on FE
+      throw new Error(errorMessage);
     }
   }
 }

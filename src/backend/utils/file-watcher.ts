@@ -51,6 +51,16 @@ class FileWatcher {
         console.log(`FileWatcher:: Directory ${dirPath} has been removed`);
         this.onNodeRemoved(directoryName, dirPath);
       });
+
+    /**
+     * fs.watch API is missing next items
+     * 1. on Mac - file removal via finder triggers rename event
+     *
+     * */
+    // fs.watch(directoryPath, { recursive: true }, (event, filename) => {
+    //     console.log('......EVENT', event);
+    //     console.log('......FILENAME', filename);
+    // });
   }
 
   stop(connection) {
