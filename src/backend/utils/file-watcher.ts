@@ -67,27 +67,32 @@ class FileWatcher {
     this.subscriptions.unsubscribe(connection);
   }
 
+  broadcast(directoryName, message) {
+    this.subscriptions.getSubscriptionsByPath(directoryName).forEach(({socket}) => {
+      socket.send(message);
+    });
+  }
+
   onNodeAdded(directoryName, nodePath) {
     const targetNodePath = nodePath.replace(path.join(process.cwd(), 'directory') + path.sep, '');
 
-    this.subscriptions.getSubscriptionsByPath(directoryName).forEach(({socket}) => {
-      socket.send(serializeMessage(fileActionTypes.ADD, directoryTreeBuilder(targetNodePath)));
-    });
+    const message = serializeMessage(fileActionTypes.ADD, directoryTreeBuilder(targetNodePath));
+    this.broadcast(directoryName, message);
   }
 
   onNodeChanged (fullDirectoryPath, directoryName, nodePath) {
-    const targetNodePath = nodePath.replace(fullDirectoryPath + path.sep, '');
-    this.subscriptions.getSubscriptionsByPath(directoryName).forEach(({socket}) => {
-      socket.send(serializeMessage(fileActionTypes.CHANGE, directoryTreeBuilder(targetNodePath)));
-    });
+    const fileName = path.parse(nodePath).base;
+    const targetNodePath = path.join(directoryName, fileName);
+
+    const message = serializeMessage(fileActionTypes.CHANGE, directoryTreeBuilder(targetNodePath))
+    this.broadcast(directoryName, message);
   }
 
   onNodeRemoved(directoryName, nodePath) {
-    this.subscriptions.getSubscriptionsByPath(directoryName).forEach(({socket}) => {
-      socket.send(serializeMessage(fileActionTypes.UNLINK, {
-        name: path.parse(nodePath).base
-      }));
+    const message = serializeMessage(fileActionTypes.UNLINK, {
+      name: path.parse(nodePath).base
     });
+    this.broadcast(directoryName, message);
   }
 
 }

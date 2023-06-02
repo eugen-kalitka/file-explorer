@@ -79,6 +79,7 @@ const filesApi = api.injectEndpoints({
           }
           if (!parsedData.data) {
             console.warn('WS Package with empty data has arrived', parsedData);
+            return;
           }
 
           if (parsedData.type === fileActionTypes.OPEN) {
