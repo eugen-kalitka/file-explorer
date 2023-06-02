@@ -1,9 +1,6 @@
 import React from 'react';
-import Layout from './layout';
 import { Box } from '@material-ui/core';
-import FileExplorer from './file-explorer';
 import { Container as ModalPromiseContainer } from 'react-modal-promise'
-import usePathQueryParam from "../hooks/usePathQueryParam";
 import { ToastContainer } from 'react-toastify';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
@@ -13,13 +10,20 @@ const darkTheme = createTheme({
   },
 })
 
-const App = () => {
-  const {path, updateUrl} = usePathQueryParam();
-
+const Layout = ({ children }) => {
   return (
-    <Layout>
-      <FileExplorer key={path} path={path} updateUrl={updateUrl} />
-    </Layout>
+    <ThemeProvider theme={darkTheme}>
+      <Box sx={{
+        p: 2,
+        height: '100vh',
+        bgcolor: '#424242',
+      }}>
+        {children}
+        <ModalPromiseContainer />
+        <ToastContainer autoClose={5000} />
+      </Box>
+    </ThemeProvider>
   );
+
 }
-export default App;
+export default Layout;
