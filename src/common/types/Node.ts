@@ -1,10 +1,10 @@
+import { nodeTypes } from "../constants/node-types";
+
 export interface Node {
   path: string;
   name: string;
-  type: 'folder' | 'file' | null;
-  // id: string;
+  type: nodeTypes | null;
   children: Node[] | null;
-  // children: string[] | null;
   size?: number;
   modifiedAt?: string;
 }

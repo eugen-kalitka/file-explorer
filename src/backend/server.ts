@@ -8,9 +8,7 @@ const fastify = Fastify({ logger: true });
 fastify.register(cors, {
   origin: true
 });
-
 fastify.register(require('@fastify/websocket'))
-
 fastify.register(require('@fastify/static'), {
   root: path.join(process.cwd(), 'public')
 });

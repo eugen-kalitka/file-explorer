@@ -95,7 +95,7 @@ export const api = createApi({
               draft.push(...transformResponse(parsedData.data));
             }
             if (parsedData.type === 'unlink') {
-              const index = draft.findIndex(({name}) => name === parsedData.name);
+              const index = draft.findIndex(({name}) => name === parsedData.data.name);
               if (index !== -1) {
                 draft.splice(index, 1);
               }

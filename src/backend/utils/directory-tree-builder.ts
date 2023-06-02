@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type {Node} from '../../common/types/Node';
+import {nodeTypes} from "../../common/constants/node-types";
 
 function directoryTreeBuilder(filename, isChild = false) {
   const targetFilePath = path.join(process.cwd(), 'directory', filename);
@@ -20,11 +21,7 @@ function directoryTreeBuilder(filename, isChild = false) {
   };
 
   if (stats.isDirectory()) {
-    info.type = 'folder';
-    // info.children = fs.readdirSync(filename).map((child) => directoryTreeBuilder(filename + '/' + child));
-
-    // info.children = fs.readdirSync(targetFilePath).map(child => (filename && filename !== '/') ? `${filename}/${child}` : child);
-
+    info.type = nodeTypes.FOLDER;
     if (!isChild) {
       info.children = fs.readdirSync(targetFilePath).map(child => {
         const childName = (filename && filename !== '/') ? `${filename}/${child}` : child;
@@ -32,7 +29,7 @@ function directoryTreeBuilder(filename, isChild = false) {
       });
     }
   } else {
-    info.type = 'file';
+    info.type = nodeTypes.FILE;
     info.size = stats.size;
   }
   return info;

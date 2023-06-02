@@ -1,102 +1,38 @@
-import fs from 'fs';
-import path from 'path';
-import directoryTreeBuilder from '../utils/directory-tree-builder';
-import fileWatcher from '../utils/file-watcher';
-
-const listenDirectory = (directoryName, socket) => {
-  console.log("PATH TO WATCH: ", directoryName);
-  const formatPath = (nodePath) => {
-    nodePath = nodePath.replace(directoryName + path.sep, '');
-    return nodePath.split(path.sep)[0];
-  };
-
-  const onNodeRemoved = (nodePath) => {
-    socket.send(JSON.stringify({
-      type: 'unlink',
-      name: formatPath(nodePath)
-    }));
-  };
-
-  const onNodeAdded = (nodePath) => {
-    const targetNodePath = nodePath.replace(path.join(process.cwd(), 'directory') + path.sep, '');
-    socket.send(JSON.stringify({
-      type: 'add',
-      data: directoryTreeBuilder(targetNodePath)
-    }));
-  };
-
-  const onNodeChanged = (nodePath) => {
-    const targetNodePath = nodePath.replace(directoryName + path.sep, '');
-    socket.send(JSON.stringify({
-      type: 'change',
-      data: directoryTreeBuilder(targetNodePath)
-    }));
-  }
-
-  return fileWatcher(directoryName, {
-    onNodeAdded,
-    onNodeChanged,
-    onNodeRemoved
-  });
-}
+import type { SocketStream } from '@fastify/websocket';
+import FileWatcher from '../utils/file-watcher';
+import FileActions from '../utils/file-actions';
+import { fileActionTypes } from "../../common/constants/file-action-types";
 
 async function service(fastify) {
-  const subscriptions = new WeakMap();
+  const fileWatcher = new FileWatcher();
 
-  fastify.get('/ws', {websocket: true}, async (connection, request) => {
-    console.log('......... ON CONNECT');
+  fastify.get('/ws', {websocket: true}, async (connection: SocketStream) => {
 
     connection.socket.on('message', (data) => {
-      const parsed = JSON.parse(data.toString());
-      console.log(" >>>>>>> data", parsed);
-      if (parsed.type === 'open') {
-        const directoryToWatch = parsed.path === '/' ? '' : parsed.path;
-        const watcher = listenDirectory(path.resolve(process.cwd(), 'directory', directoryToWatch), connection.socket);
-        subscriptions.set(connection, watcher);
-
-        const tree = directoryTreeBuilder(directoryToWatch);
-        connection.socket.send(JSON.stringify({
-          type: 'open',
-          data: tree
-        }));
+      let message;
+      try {
+        message = JSON.parse(data.toString());
+      } catch(e) {
+        console.log('Error occurred on parsing message');
+        return;
       }
-      if (parsed.type === 'unlink') {
-        parsed.files.forEach(node => {
-          const fullNodePath = path.join(process.cwd(), 'directory', node.id);
-          if (fs.existsSync(fullNodePath)) {
-            if (node.isDir) {
-              fs.rmSync(fullNodePath, { recursive: true, force: true });
-            } else {
-              fs.unlinkSync(fullNodePath)
-            }
-          }
-        })
+      if (message.type === 'open') {
+        const directoryToWatch = message.path === '/' ? '' : message.path;
+        fileWatcher.start(directoryToWatch, connection)
       }
-      if (parsed.type === 'move') {
-        const destinationPath = path.join(process.cwd(), 'directory', parsed.destination);
-        parsed.files.forEach(node => {
-          const fullNodePath = path.join(process.cwd(), 'directory', node);
-          const nodeDestinationPath = path.join(destinationPath, path.basename(fullNodePath));
-          if (fs.existsSync(fullNodePath)) {
-            fs.renameSync(fullNodePath, nodeDestinationPath);
-          }
-        })
+      if (message.type === fileActionTypes.UNLINK) {
+        FileActions.unlink(message.files);
       }
-      if (parsed.type === 'createFolder') {
-        const newFolderPath = path.join(process.cwd(), 'directory', parsed.path, parsed.folderName);
-        if (fs.existsSync(newFolderPath)) {
-          // TODO send error package on FE
-          return 'error'
-        }
-        fs.mkdirSync(newFolderPath);
+      if (message.type === fileActionTypes.MOVE) {
+        FileActions.move(message.files, message.destination);
+      }
+      if (message.type === fileActionTypes.CREATE_FOLDER) {
+        FileActions.createFolder(message.path, message.folderName);
       }
     });
 
     connection.socket.on('close', (e) => {
-      const subscription = subscriptions.get(connection);
-      if (subscription) {
-        subscription.close();
-      }
+      fileWatcher.stop(connection);
     });
 
     /**
