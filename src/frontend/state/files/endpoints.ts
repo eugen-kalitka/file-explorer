@@ -2,8 +2,9 @@ import api from '../api';
 import {FileArray, FileData} from "chonky";
 import {FolderEvent} from "../../../common/types/FolderEvent";
 import {fileActionTypes} from "../../../common/constants/file-action-types";
-import { formatNode, transformResponse, parseWsMessage } from './utils'
+import { formatNode, transformResponse } from './utils'
 import errorHandler from './error-handler';
+import parseWsMessage from '../../../common/utils/ws-message-parser';
 
 let socket = null;
 

@@ -3,6 +3,7 @@ import FileWatcher from '../utils/file-watcher';
 import FileActions from '../utils/file-actions';
 import { fileActionTypes } from "../../common/constants/file-action-types";
 import {serializeMessage} from "../utils/helpers";
+import parseWsMessage from "../../common/utils/ws-message-parser";
 
 async function service(fastify) {
   const fileWatcher = new FileWatcher();
@@ -10,13 +11,8 @@ async function service(fastify) {
   fastify.get('/ws', {websocket: true}, async (connection: SocketStream) => {
 
     connection.socket.on('message', async (data) => {
-      let message;
-      try {
-        message = JSON.parse(data.toString());
-      } catch(e) {
-        console.log('Error occurred on parsing message');
-        return;
-      }
+      const message = parseWsMessage(data.toString());
+
       if (message.type === 'open') {
         const directoryToWatch = message.path === '/' ? '' : message.path;
         fileWatcher.start(directoryToWatch, connection)
