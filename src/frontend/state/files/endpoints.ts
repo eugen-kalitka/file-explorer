@@ -2,7 +2,8 @@ import api from '../api';
 import {FileArray, FileData} from "chonky";
 import {FolderEvent} from "../../../common/types/FolderEvent";
 import {fileActionTypes} from "../../../common/constants/file-action-types";
-import { formatNode, transformResponse } from './utils'
+import { formatNode, transformResponse, parseWsMessage } from './utils'
+import errorHandler from './error-handler';
 
 let socket = null;
 
@@ -64,40 +65,58 @@ const filesApi = api.injectEndpoints({
         return { data: [] };
       },
 
-      async onCacheEntryAdded(arg, {updateCachedData, cacheDataLoaded, cacheEntryRemoved}) {
+      async onCacheEntryAdded(path, {updateCachedData, cacheDataLoaded, cacheEntryRemoved}) {
         await cacheDataLoaded;
 
         const ws = new WebSocket('ws://localhost:5000/ws');
 
         // populate the array with messages as they are received from the websocket
         ws.addEventListener('message', (event) => {
-          updateCachedData((draft) => {
-            const parsedData = JSON.parse(event.data);
-            if (parsedData.type === fileActionTypes.OPEN) {
+          const parsedData = parseWsMessage(event.data);
+
+          if (parsedData.type === 'error' || parsedData.error) {
+            return errorHandler(parsedData.error);
+          }
+          if (!parsedData.data) {
+            console.warn('WS Package with empty data has arrived', parsedData);
+          }
+
+          if (parsedData.type === fileActionTypes.OPEN) {
+            updateCachedData((draft) => {
               draft.push(...transformResponse(parsedData.data));
-            }
-            if (parsedData.type === fileActionTypes.UNLINK) {
+            })
+          }
+
+          if (parsedData.type === fileActionTypes.UNLINK) {
+            updateCachedData((draft) => {
               const index = draft.findIndex(({name}) => name === parsedData.data.name);
               if (index !== -1) {
                 draft.splice(index, 1);
               }
-            }
-            if (parsedData.type === fileActionTypes.ADD) {
+            });
+          }
+
+          if (parsedData.type === fileActionTypes.ADD) {
+            updateCachedData((draft) => {
               draft.push(formatNode(parsedData.data));
-            }
-            if (parsedData.type === fileActionTypes.CHANGE) {
+            });
+          }
+
+          if (parsedData.type === fileActionTypes.CHANGE) {
+            updateCachedData((draft) => {
               const index = draft.findIndex(({name}) => name === parsedData.data.name);
               if (index !== -1) {
                 draft[index] = formatNode(parsedData.data);
               }
-            }
-          })
+            });
+          }
         });
+
         ws.addEventListener('open', () => {
           socket = ws;
           const openFolderEvent: FolderEvent = {
             type: fileActionTypes.OPEN,
-            path: arg
+            path
           };
           ws.send(JSON.stringify(openFolderEvent));
         });

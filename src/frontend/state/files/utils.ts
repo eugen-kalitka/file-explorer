@@ -2,6 +2,17 @@ import type {FileData} from "chonky";
 import type {Node} from "../../../common/types/Node";
 import {nodeTypes} from "../../../common/constants/node-types";
 
+export const parseWsMessage = (data) => {
+  let parsedData;
+  try {
+    parsedData = JSON.parse(data);
+  } catch (e) {
+    console.log(`Error occurred on parsing incoming message`, e);
+    return {};
+  }
+  return parsedData;
+}
+
 /**
  * Transforms node object to Chonky FileData
  * */
