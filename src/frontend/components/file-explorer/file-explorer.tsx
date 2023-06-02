@@ -57,7 +57,7 @@ const FileExplorer = ({ path, updateUrl }) => {
   ];
 
   return (
-    <FileBrowser files={data} fileActions={fileActions} folderChain={folderChain} onFileAction={handleFileAction}>
+    <FileBrowser files={data} fileActions={fileActions} folderChain={folderChain} onFileAction={handleFileAction} darkMode>
       <FileNavbar/>
       <FileToolbar/>
       <FileList/>
