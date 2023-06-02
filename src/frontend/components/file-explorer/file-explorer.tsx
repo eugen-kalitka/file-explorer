@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   FileBrowser,
   FileNavbar,
@@ -7,7 +7,7 @@ import {
   FileList,
   FileHelper
 } from 'chonky';
-import { useStreamFoldersQuery, useRemoveNodesMutation, useMoveNodesMutation, useCreateFolderMutation } from '../../state/api';
+import { useStreamFoldersQuery, useRemoveNodesMutation, useMoveNodesMutation, useCreateFolderMutation } from '../../state/files';
 import { getFolderChain } from './file-explorer.utils';
 import prompt from '../prompt';
 
