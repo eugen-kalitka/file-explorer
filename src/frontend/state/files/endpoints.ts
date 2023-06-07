@@ -67,11 +67,11 @@ const filesApi = api.injectEndpoints({
       },
 
       async onCacheEntryAdded(path, {updateCachedData, cacheDataLoaded, cacheEntryRemoved}) {
-        await cacheDataLoaded;
+        // cacheDataLoaded is used to determine when the first data has been fetched
+        // await cacheDataLoaded;
 
         const ws = new WebSocket('ws://localhost:5000/ws');
 
-        // populate the array with messages as they are received from the websocket
         ws.addEventListener('message', (event) => {
           const parsedData = parseWsMessage(event.data);
 
@@ -122,6 +122,8 @@ const filesApi = api.injectEndpoints({
           };
           ws.send(JSON.stringify(openFolderEvent));
         });
+
+        // cacheEntryRemoved will resolve when the cache subscription is no longer active
         await cacheEntryRemoved;
         ws.close()
       },
